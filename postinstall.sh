@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## CONFIGURATION ###
 ADM_NAME='admin'
@@ -25,37 +25,41 @@ function install_docker_compose() {
 function docker_network_create() {
   name=${1}
   subnet=${2}
-  docker network inspect ${name} >/dev/null 2>&1 || \
-  docker network create --subnet ${subnet} ${name}
+  docker network inspect "${name}" >/dev/null 2>&1 || \
+  docker network create --subnet "${subnet}" "${name}"
 }
 
 function create_compose() {
   compose=${1}
-  touch ${compose}
-  echo -e "version: '3.8'\n" >${compose}
+  touch "${compose}"
+  echo -e "version: '3.8'\n" >"${compose}"
 
   # define services
-  echo -e "services:\n" >>${compose}
+  echo -e "services:\n" >>"${compose}"
   if [[ ${#SERVICES} == 0 ]]; then
-    echo -e "  test:" >>${compose}
-    echo -e "    image: hello-world\n" >>${compose}
+    echo -e "  test:" >>"${compose}"
+    echo -e "    image: hello-world\n" >>"${compose}"
   fi
 
-  echo -e "\n" >>${compose}
+  echo -e "\n" >>"${compose}"
 
   # define networks
-  echo -e "networks:" >>${compose}
+  echo -e "networks:" >>"${compose}"
 
   # define stack network
-  echo -e "  default:" >>${compose}
-  echo -e "    external:" >>${compose}
-  echo -e "      name: ${name}" >>${compose}
+  {
+    echo -e "  default:"
+    echo -e "    external:"
+    echo -e "      name: ${name}"
+  } >>"${compose}"
 
   # define helper networks
-  for helper_name in ${!HELPER[@]}; do
-    echo -e "  ${helper_name}:" >>${compose}
-    echo -e "    external:" >>${compose}
-    echo -e "      name: ${helper_name}" >>${compose}
+  for helper_name in "${!HELPER[@]}"; do
+    {
+      echo -e "  ${helper_name}:"
+      echo -e "    external:"
+      echo -e "      name: ${helper_name}"
+    } >>"${compose}"
   done
 }
 
@@ -66,15 +70,15 @@ if [[ $(/usr/bin/id -u) != "0" ]]; then
 fi
 
 # install docker if not already installed
-if [[ -z $(which docker) ]]; then
-  if [[ -z $(which docker) ]]; then
+if [[ -z $(command -v docker) ]]; then
+  if [[ -z $(command -v docker) ]]; then
     apt-get install curl
   fi
   curl https://get.docker.com | bash
 fi
 
 # install docker-compose if not already installed
-if [[ -z $(which docker-compose) ]]; then
+if [[ -z $(command -v docker-compose) ]]; then
   install_docker_compose
 fi
 
@@ -86,40 +90,40 @@ groupadd -g ${ADM_GID} ${ADM_NAME}
 mkdir ${ADM_HOME}
 chown -R root:${ADM_NAME} ${ADM_HOME}
 chmod -R 775 ${ADM_HOME}
-for user in ${ADM_USERS}; do
-  adduser ${user} ${ADM_NAME}
+for user in "${ADM_USERS[@]}"; do
+  adduser "${user}" ${ADM_NAME}
 done
 
 # create helper networks
-for name in ${!HELPER[@]}; do
+for name in "${!HELPER[@]}"; do
   subnet=${HELPER[${name}]}
-  docker_network_create ${name} ${subnet}
+  docker_network_create "${name}" "${subnet}"
 done
 
 # create stack logic
 mkdir -p ${ADM_HOME}/{services,images,tools,docs}/
-for name in ${!STACKS[@]}; do
+for name in "${!STACKS[@]}"; do
   subnet=${STACKS[${name}]}
-  mkdir -p ${ADM_HOME}/{services,images}/${name}/
+  mkdir -p "${ADM_HOME}/{services,images}/${name}/"
   mkdir -p "/srv/${name}/"
 
   # create stack network
-  docker_network_create ${name} ${subnet}
+  docker_network_create "${name}" "${subnet}"
 
   # create docker-compose.yml
   compose="${ADM_HOME}/services/${name}/docker-compose.yml"
-  create_compose ${compose}
+  create_compose "${compose}"
 done
 
 # install ctop
-if [[ -z $(which wget) ]]; then
+if [[ -z $(command -v wget) ]]; then
   apt-get install -y wget
 fi
 wget https://github.com/bcicen/ctop/releases/download/v0.7.3/ctop-0.7.3-linux-amd64 -O /usr/local/bin/ctop
 chmod +x /usr/local/bin/ctop
 
 # add tools
-if [[ -z $(which wget) ]]; then
+if [[ -z $(command -v wget) ]]; then
   apt-get install -y wget
 fi
 wget https://github.com/felbinger/DNV/releases/download/v0.1/dnv -O /usr/local/bin/dnv
