@@ -87,3 +87,37 @@ By default, a SQL-Lite database is used, so we still need to comment it out.
 
 Now we are finish and we can start the container with `docker-compose up -d`
 
+### WhatsApp-Bridge
+
+First add this configuration to your `docker-compose file` and start 
+the container with `docker-compose up -d` 
+
+```yaml
+  mautrix-whatsapp:
+    ports:
+      - 29318:29318
+    networks:
+      - mautrix-net
+    hostname:
+      - mautrix
+    container_name: mautrix-whatsapp   
+    image: dock.mau.dev/tulir/mautrix-whatsapp:latest
+    restart: unless-stopped
+    volumes:
+      - /srv/comms/mautrix-whatsapp/data:/data
+  networks:
+    mautrix-net:
+    matrix-net:
+      external: true
+```
+After starting this container you will find a config.yaml in your data folder.  
+
+* Update the `config.yaml` change the Domain and Server-Adress to your Matrix-Sever
+* Now update the permisson section in `config.yaml` add your matrix server and a user with admin permissons
+* Restart the container again to create a registration.yaml 
+* Update the url section of the `registration.yaml` use the `hostname` of the Container 
+* Move the registration.yaml to your matrix data folder  `mv registration.yaml /srv/comms/matrix/data`
+* After moving the registration.yaml update the `homeserver.yaml` under `app_service_config_files:` add the path of your `registration.yaml` file 
+* Change permissons of the file with `chmod 644  registration.yaml` 
+* After updating homeserver.yaml restart the conatainer by using `docker restart matrix`
+* If your matrix-server is runing run the bridge by using `docker-compose up -d` 
