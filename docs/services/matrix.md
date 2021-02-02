@@ -27,7 +27,7 @@ After the command is done you can find the homeserver.yaml configurationfile in 
 Now you can start the service using docker-compose up -d matrix.
 
 ### Register a new user 
-You can enable the registration in your `homeserver.yaml` file:
+If you want to enable registration via a Matrix client such as element  you can enable it in your `homeserver.yaml` file.   
 ```yaml
 ...
 enable_registration: true
@@ -36,7 +36,7 @@ enable_registration: true
 
 Don't forget to start the container after editing the option with `docker-compose up -d`
 
-Now you can create a user using the command line:
+You can also create a new user from the command line:
 ```yaml
 docker-compose exec matrix register_new_matrix_user -u USERNAME -p PASSWORD -a -c /data/homeserver.yaml https://matrix.domain.de
 ```
